@@ -4,6 +4,8 @@ using RestSharp;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Security;
+using System.Security.Cryptography;
+using System.Text;
 using static Program;
 
 class Program
@@ -208,6 +210,7 @@ class Program
                 //Console.WriteLine($"API Response: {responseContent}");
                 CustomObject obj = JsonConvert.DeserializeObject<CustomObject>(responseContent);
                 Console.WriteLine($"Your Information is: {obj.EncryptedSecuredItemResult.skey}");
+                Console.WriteLine($"Your decrypted inforamtion is: {DecryptSKey(obj.EncryptedSecuredItemResult.skey, obj.EncryptedSecuredItemResult.iv)}");
             }
             else
             {
@@ -219,6 +222,44 @@ class Program
             Console.WriteLine($"HTTP Request Error: {ex.Message}");
         }
         return selectedItemCreds;
+    }
+    public static string DecryptSKey(string skey, string iv)
+    {
+        try
+        {
+            // Convert the base64 encoded skey string to a byte array
+            byte[] encryptedBytes = Convert.FromBase64String(skey);
+
+            using (AesCryptoServiceProvider aesAlg = new AesCryptoServiceProvider())
+            {
+                var privKey = File.ReadAllText("C:/privKey.txt");
+                aesAlg.Key = Encoding.UTF8.GetBytes(privKey); // Set the decryption key
+                // Initialize the IV (Initialization Vector) - you should have this information
+                aesAlg.IV = Encoding.UTF8.GetBytes(iv);
+
+                // Create a decryptor to perform the stream transform
+                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+
+                // Create the streams to process the decryption
+                using (MemoryStream msDecrypt = new MemoryStream(encryptedBytes))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+                            // Read the decrypted bytes from the decrypting stream and return as a string
+                            string decryptedText = srDecrypt.ReadToEnd();
+                            return decryptedText;
+                        }
+                    }
+                }
+            }
+        }
+        catch (CryptographicException ex)
+        {
+            Console.WriteLine("Decryption error: " + ex.Message);
+            return null;
+        }
     }
     public class StartAuthDTO
     {

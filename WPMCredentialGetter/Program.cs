@@ -8,11 +8,14 @@ using static Program;
 
 class Program
 {
-    private static string _TenantId { get; set; } = "aay4551";
-    private static string _CompoundedURL { get; set; } = $"https://{_TenantId}.id.cyberark.cloud";
-    private static string _PublicKey { get; set; } = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhxvr6R7Ery9qOwYVHy01OeHD4vW5g5my7EVlz9M14umetopZ3hM9S6x6CST4Tp7OhNytGDvYIOyO48XCGrWwSGYbCfHw4A4a8B3PrvY3TGjsQXgLWxQHePd7ITPsZi4I35dLJFoLYq4X5lcvD3CJPllaziqRylgSfcDjGYBUpJp1v3NHz9A7ZUg2NUaBNrxxOq0PORDhnkfewVbEeg4vdFnubLhyk98L+kkkzrvHWBO4ChugNbbIQY9FM7hzWxHAtiV5GrBqYSh8iWkWO5felGIRlZ16ygyZ2OOgZ5GLGpPpWlaJIzot1liKWfRIBhU41XKqQ2ZfkDwf73oOwIDAQAB-----END PUBLIC KEY-----";
+    private static string _TenantId { get; set; } = "";
+    private static string _PublicKey { get; set; } = File.ReadAllText(@"C:\pubkey.txt");
+    private static string _CompoundedURL { get; set; } = "";
     static void Main()
     {
+        Console.WriteLine("What is your tenant id?");
+        _TenantId = Console.ReadLine() ?? throw new NullReferenceException();
+        _CompoundedURL = $"https://{_TenantId}.id.cyberark.cloud";
         GetSecuredItems();
 
         if (_SecuredItems.Count > 0)
@@ -123,6 +126,7 @@ class Program
 
         string jsonPayload = JsonConvert.SerializeObject(payload);
         request.AddParameter("application/json", jsonPayload, ParameterType.RequestBody);
+        request.Timeout = 30000;
 
         try
         {
@@ -150,6 +154,7 @@ class Program
     {
         var bearerToken = GetBearerToken();
         var client = new RestClient($"{_CompoundedURL}/UPRest/GetSecuredItemsData");
+        //var client = new RestClient($"{_CompoundedURL}/UPRest/GetUPData?force=true");
         var request = new RestRequest(Method.POST);
         request.AddHeader("Content-Type", "application/json");
         request.AddHeader("Authorization", $"Bearer {bearerToken}");
@@ -179,6 +184,7 @@ class Program
     {
         var selectedItemCreds = new SelectedItemCreds();
         var bearerToken = GetBearerToken();
+        //var client = new RestClient($"{_CompoundedURL}/UPRest/GetMCFA?sItemKey=" + securedItem.ItemKey);
         var client = new RestClient($"{_CompoundedURL}/UPRest/GetCredsForSecuredItem?sItemKey=" + securedItem.ItemKey);
         var request = new RestRequest(Method.POST);
         request.AddHeader("Content-Type", "application/json");
@@ -199,7 +205,9 @@ class Program
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string responseContent = response.Content;
-                Console.WriteLine($"API Response: {responseContent}");
+                //Console.WriteLine($"API Response: {responseContent}");
+                CustomObject obj = JsonConvert.DeserializeObject<CustomObject>(responseContent);
+                Console.WriteLine($"Your Information is: {obj.EncryptedSecuredItemResult.skey}");
             }
             else
             {
@@ -239,5 +247,36 @@ class Program
         public string UserName { get; set; }
         public string Password { get; set; }
         public string Note { get; set; }
+    }
+    public class CustomObject
+    {
+        public bool success { get; set; }
+        [JsonProperty("Result")]
+        public EncryptedSecuredItemResult EncryptedSecuredItemResult { get; set; }
+        public object Message { get; set; }
+        public object MessageID { get; set; }
+        public object Exception { get; set; }
+        public object ErrorID { get; set; }
+        public object ErrorCode { get; set; }
+        public bool IsSoftError { get; set; }
+        public object InnerExceptions { get; set; }
+    }
+    public class EncryptedSecuredItemResult
+    {
+        public string skey { get; set; }
+        public object p { get; set; }
+        public List<Ce> ce { get; set; }
+        public string ne { get; set; }
+        public string e { get; set; }
+        public string iv { get; set; }
+        public object n { get; set; }
+        public string u { get; set; }
+    }
+    public class Ce
+    {
+        public object cfv { get; set; }
+        public string cfv_e { get; set; }
+        public string cfk { get; set; }
+        public bool cfh { get; set; }
     }
 }

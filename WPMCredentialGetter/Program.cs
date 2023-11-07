@@ -18,12 +18,20 @@ class Program
         Console.WriteLine("What is your tenant id?");
         _TenantId = Console.ReadLine() ?? throw new NullReferenceException();
         _CompoundedURL = $"https://{_TenantId}.id.cyberark.cloud";
-        GetApplications();
-        SetApplications();
 
-        //GetSecuredItems();
-        //SetSecuredItems();
-
+        Console.WriteLine("Select 1 for App Creds, 2 for Secured Items:");
+        var answer = Console.ReadLine();
+        
+        if(answer == "1")
+        {
+            GetApplications();
+            SetApplications();
+        }
+        else
+        {
+            GetSecuredItems();
+            SetSecuredItems();
+        }
     }
     private static void SetSecuredItems()
     {
@@ -303,8 +311,8 @@ class Program
     {
         var selectedItemCreds = new SelectedItemCreds();
         var bearerToken = GetBearerToken();
-        var client = new RestClient($"{_CompoundedURL}/UPRest/GetMCFA?appkey=" + "@/home/5ae4b83d-7d83-4c9d-b9b7-c526fe78b424/apps/UPS"); //securedItem.ItemKey);
-        //var client = new RestClient($"{_CompoundedURL}/UPRest/GetCredsForSecuredItem?sItemKey=" + securedItem.ItemKey);
+        //var client = new RestClient($"{_CompoundedURL}/UPRest/GetMCFA?appkey=" + "@/home/5ae4b83d-7d83-4c9d-b9b7-c526fe78b424/apps/UPS"); //securedItem.ItemKey);
+        var client = new RestClient($"{_CompoundedURL}/UPRest/GetCredsForSecuredItem?sItemKey=" + securedItem.ItemKey);
         var request = new RestRequest(Method.POST);
         request.AddHeader("Content-Type", "application/json");
         request.AddHeader("Authorization", $"Bearer {bearerToken}");

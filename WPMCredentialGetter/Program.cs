@@ -11,7 +11,7 @@ using static Program;
 class Program
 {
     private static string _TenantId { get; set; } = "";
-    private static string _PublicKey { get; set; } = File.ReadAllText(@"C:\pubkey.txt");
+    //private static string _PublicKey { get; set; } = File.ReadAllText(@"C:\pubkey.txt");
     private static string _CompoundedURL { get; set; } = "";
     static void Main()
     {
@@ -21,8 +21,8 @@ class Program
 
         Console.WriteLine("Select 1 for App Creds, 2 for Secured Items:");
         var answer = Console.ReadLine();
-        
-        if(answer == "1")
+
+        if (answer == "1")
         {
             GetApplications();
             SetApplications();
@@ -256,7 +256,7 @@ class Program
             {
                 string responseContent = response.Content;
                 AppCredReturn obj = JsonConvert.DeserializeObject<AppCredReturn>(responseContent) ?? throw new NullReferenceException();
-                if(obj.Success)
+                if (obj.Success)
                 {
                     Console.WriteLine($"Your UserName is: {obj.Result.u}");
                     Console.WriteLine($"Your Password is: {obj.Result.p}");
@@ -334,7 +334,15 @@ class Program
                 string responseContent = response.Content;
                 //Console.WriteLine($"API Response: {responseContent}");
                 CustomObject obj = JsonConvert.DeserializeObject<CustomObject>(responseContent) ?? throw new NullReferenceException();
-                Console.WriteLine($"Your Information is: {obj.EncryptedSecuredItemResult.skey}");
+                Console.WriteLine($"Your Information is:");
+                if (obj.EncryptedSecuredItemResult.u != null)
+                    Console.WriteLine($"Username: {obj.EncryptedSecuredItemResult.u}");
+
+                if (obj.EncryptedSecuredItemResult.p != null)
+                    Console.WriteLine($"Password: {obj.EncryptedSecuredItemResult.p}");
+
+                if (obj.EncryptedSecuredItemResult.n != null)
+                    Console.WriteLine($"Notes: {obj.EncryptedSecuredItemResult.n}");
                 //Console.WriteLine($"Your decrypted inforamtion is: {DecryptSKey(obj.EncryptedSecuredItemResult.skey, obj.EncryptedSecuredItemResult.iv)}");
             }
             else
